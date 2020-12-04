@@ -14,7 +14,6 @@ class Question:
         else:
             self.choices = choices
 
-
     @property
     def point_value(self):
         return self.__point_value

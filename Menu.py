@@ -1,6 +1,7 @@
 # Alecxander Butler CIS 345 T/Th 12:00 Mental Anguish
 from tkinter import *
 from file_handle import *
+from random import sample
 
 
 def edit_question(event):
@@ -26,75 +27,84 @@ def edit_question(event):
 
 
 def delete_question():
-    global list_box, question_list
-    print('The delete button is working')
-# store the index number of the question you want to delete using the getcurrselection method of listbox
+    global list_box, question_list, edit_index
+
     edit_index = list_box.curselection()[0]
     question_list.pop(edit_index)
     list_box.delete(edit_index)
     save_questions(question_list)
 
-    question_text.set('')
-    point_value.set('')
-    correct_feedback.set('')
-    incorrect_feedback.set('')
-    correct_choice.set('')
-    choice1.set('')
-    choice2.set('')
-    choice3.set('')
+    clear_text_variables()
 
 
 def start_quiz():
-    global question_text, point_value
+    global question_text, point_value, question_list, quiz_questions, quiz_question
     list_box.forget()
     add_frame.forget()
     list_label.forget()
     quiz_frame.pack()
     quiz_frame.pack_propagate(0)
-    question_text.set(value=question_list[0].question_text)
-    point_value.set(value=question_list[0].point_value)
-    correct_choice.set(value=question_list[0].correct_choice)
-    choice1.set(value=question_list[0].choices[1])
-    choice2.set(value=question_list[0].choices[2])
-    choice3.set(value=question_list[0].choices[3])
-#     C
-# forgets add question frame and list box (Do I have to add the list to the frame? I probably have to add the list to
-# the frame)
-# .pack quiz frame
+    exit_quiz_btn.grid(row=7, column=0)
+    quiz_questions = sample(question_list, 3)
+    quiz_questions = iter(quiz_questions)
+    next_question_button.grid(row=7, column=1)
+    next_question()
 
 
-def end_quiz():
-    pass
-# .pack question_list/add frame
-# forget quiz frame
-
-
-def evaluation_question():
-    global question_selection, question_list, feedback, point_total, question_total
+def evaluate_question():
+    global question_selection, question_list, feedback, point_total, question_total, next_question_button,\
+        quiz_question, submit_question_btn, quiz_question, feedback_label, randomized_choices
 
     correct_question_index = 10
+    submit_question_btn.forget()
 
-    for i in range (4):
-        if question_list[0].correct_choice == question_list[0].choices[i]:
+    for i in range(4):
+        if quiz_question.correct_choice == randomized_choices[i]:
             correct_question_index = i
+            break
 
     if question_selection.get() == correct_question_index:
-        point_total.set(value=point_total.get() + question_list[0].point_value)
-        feedback.set(value=question_list[0].correct_feedback)
+        point_total.set(point_total.get() + quiz_question.point_value)
+        feedback.set(value=quiz_question.correct_feedback)
     else:
-        feedback.set(value=question_list[0].incorrect_feedback)
+        feedback.set(value=quiz_question.incorrect_feedback)
     question_total.set(value=question_total.get() + 1)
 
-#     Spawn next question button
+    feedback_label.grid(row=6, column=1)
+    submit_question_btn['state'] = 'disabled'
+
+    if question_total.get() != 3:
+        next_question_button.grid(row=7, column=1)
 
 
-#     if index_number_selection == index_value_correct_answer
-#         total_points += question.pointvalue()
-#         display corect feedback
-#     else:
-#             display incorrect feedback
-#     question counter += 1
-#     Set question to new question
+def exit_quiz():
+    list_label.pack()
+    list_box.pack()
+    add_frame.pack()
+    quiz_frame.forget()
+
+    question_total.set(value=0)
+    point_total.set(value=0)
+    clear_text_variables()
+
+
+def next_question():
+    global quiz_question, quiz_questions, next_question_button, randomized_choices
+
+    quiz_question = next(quiz_questions)
+
+    next_question_button.grid_forget()
+    feedback_label.grid_forget()
+    submit_question_btn.grid(row=5, column=0)
+    submit_question_btn['state'] = 'normal'
+
+    question_text.set(quiz_question.question_text)
+    point_value.set(quiz_question.point_value)
+    randomized_choices = sample(quiz_question.choices, 4)
+    choice0.set(randomized_choices[0])
+    choice1.set(randomized_choices[1])
+    choice2.set(randomized_choices[2])
+    choice3.set(randomized_choices[3])
 
 
 def add_question():
@@ -120,15 +130,34 @@ def add_question():
         question_list.append(temp_question)
 
     save_questions(question_list)
+    clear_text_variables()
 
+
+def clear_text_variables():
     question_text.set('')
     point_value.set('')
     correct_feedback.set('')
     incorrect_feedback.set('')
     correct_choice.set('')
+    choice0.set('')
     choice1.set('')
     choice2.set('')
     choice3.set('')
+
+
+def search_question():
+    pass
+#     for question in question_list:
+#         Loop through question list and append question text to a search_question_text list
+#     close matches list  = get close matches(question_search.get(), search_question_text_list, cutoff=.3)
+# Have to search through question text, choices, and feedback
+#
+#     Bring up search question frame
+#     Similar_questions = get_close_matches(search word, quest
+#       for similar question in similar_questions
+#           append to end of a listbox
+
+
 
 
 win = Tk()
@@ -139,6 +168,7 @@ point_value = StringVar()
 correct_feedback = StringVar()
 incorrect_feedback = StringVar()
 correct_choice = StringVar()
+choice0 = StringVar()
 choice1 = StringVar()
 choice2 = StringVar()
 choice3 = StringVar()
@@ -146,7 +176,9 @@ question_selection = IntVar()
 point_total = IntVar(value=0)
 question_total = IntVar(value=0)
 feedback = StringVar()
-
+quiz_questions = list()
+quiz_question = None
+randomized_choices = list()
 
 edit_index = 0
 edit_ques = None
@@ -237,7 +269,7 @@ quiz_point_label.grid(row=0, column=1, sticky='e')
 question_number_label = Label(quiz_frame, textvariable=question_total)
 question_number_label.grid(row=1, column=1)
 
-quiz_choice_1 = Radiobutton(quiz_frame, textvariable=correct_choice, variable=question_selection, value=0)
+quiz_choice_1 = Radiobutton(quiz_frame, textvariable=choice0, variable=question_selection, value=0)
 quiz_choice_1.grid(row=1, column=0)
 
 quiz_choice_2 = Radiobutton(quiz_frame, textvariable=choice1, variable=question_selection, value=1)
@@ -249,11 +281,12 @@ quiz_choice_3.grid(row=3, column=0)
 quiz_choice_4 = Radiobutton(quiz_frame, textvariable=choice3, variable=question_selection, value=3)
 quiz_choice_4.grid(row=4, column=0)
 
-submit_question_btn = Button(quiz_frame, command=evaluation_question, text='Submit Question')
-submit_question_btn.grid(row=5, column=0)
+submit_question_btn = Button(quiz_frame, command=evaluate_question, text='Submit Question')
 
 feedback_label = Label(quiz_frame, textvariable=feedback)
-feedback_label.grid(row=6, column=1)
-# Submit button that is linked to function evaluate choice
+
+next_question_button = Button(quiz_frame, command=next_question, text='Next question')
+
+exit_quiz_btn = Button(quiz_frame, command=exit_quiz, text='Exit quiz')
 
 win.mainloop()
