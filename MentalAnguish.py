@@ -132,7 +132,8 @@ def retrieve_questions():
                                      question_text=question_load['Question Text'],
                                      correct_feedback=question_load['Correct Feedback'],
                                      incorrect_feedback=question_load['Incorrect Feedback'],
-                                     correct_choice=question_load['Correct Choice'], choices=question_load['Choices'])
+                                     correct_choice=question_load['Correct Choice'],
+                                     choices=question_load['Choices'])
             return_question_list.append(temp_question)
     return return_question_list
 
@@ -141,10 +142,11 @@ def edit_question(event):
     """Fills the entry widgets with the selected questions information, saves the index of the question you
     are editing and sets the edit mode to True so that the add_question function deletes the appropriate
     old question, and sets the new question in its place"""
-
     global win, question_text, point_value, correct_feedback, incorrect_feedback, \
         correct_choice, choice1, choice2, choice3, list_box, edit_menu, edit_mode, \
         edit_index, edit_ques, delete_btn
+
+    add_frame.pack()
 
     edit_index = list_box.curselection()[0]
     edit_ques = question_list[edit_index]
@@ -185,7 +187,8 @@ def start_quiz():
     list_box.forget()
     add_frame.forget()
     list_label.forget()
-    quiz_frame.pack()
+    win.geometry('600x300')
+    quiz_frame.pack(fill='both', padx=5, pady=5)
     quiz_frame.pack_propagate(0)
     exit_quiz_btn.grid(row=7, column=0)
     quiz_questions = sample(question_list, 3)
@@ -219,13 +222,13 @@ def evaluate_question():
         feedback.set(value=quiz_question.correct_feedback)
     else:
         feedback.set(value=quiz_question.incorrect_feedback)
-    question_total.set(value=question_total.get() + 1)
 
-    feedback_label.grid(row=6, column=1)
+    out_of_points.set(out_of_points.get()+quiz_question.point_value)
+    feedback_label.grid(row=6, column=3)
     submit_question_btn['state'] = 'disabled'
 
     if question_total.get() != 3:
-        next_question_button.grid(row=7, column=1)
+        next_question_button.grid(row=7, column=3)
 
 
 def exit_quiz():
@@ -236,6 +239,7 @@ def exit_quiz():
     add_frame.pack()
     quiz_frame.forget()
     search_question_frame.forget()
+    win.geometry(win_size)
 
     question_total.set(value=0)
     point_total.set(value=0)
@@ -253,6 +257,7 @@ def next_question():
     feedback_label.grid_forget()
     submit_question_btn.grid(row=5, column=0)
     submit_question_btn['state'] = 'normal'
+    question_total.set(value=question_total.get() + 1)
 
     question_text.set(quiz_question.question_text)
     point_value.set(quiz_question.point_value)
@@ -268,7 +273,8 @@ def add_question():
     the submit process actually happens in the next method, this is to "open" the form
     and gather the data"""
     global point_value, correct_feedback, incorrect_feedback, \
-        correct_choice, choice1, choice2, choice3, question_list, add_frame, question_text, edit_index, edit_mode
+        correct_choice, choice1, choice2, choice3, question_list, \
+        add_frame, question_text, edit_index, edit_mode
     try:
 
         if (len(correct_choice.get()) == 0 or len(choice1.get()) == 0 or len(choice2.get()) == 0 or
@@ -339,8 +345,19 @@ def search_question():
         close_matches_list_box.insert(END, close_match)
 
 
+def pack_add_frame():
+    clear_text_variables()
+    add_frame.pack(pady=5)
+    add_frame.pack_propagate(0)
+
+
+def forget_add_frame():
+    add_frame.forget()
+
+
 win = Tk()
-win.geometry('800x700')
+win_size = '750x625'
+win.geometry(win_size)
 win.iconbitmap('MentalAnguishIcon.ico')
 
 question_text = StringVar()
@@ -360,6 +377,11 @@ quiz_questions = list()
 quiz_question = None
 randomized_choices = list()
 search_text = StringVar()
+out_of_points = IntVar()
+out_of_questions = StringVar(value='/3')
+
+edit_question_color = 'PeachPuff'
+
 
 edit_index = 0
 edit_ques = None
@@ -371,13 +393,9 @@ win.config(menu=menu_bar)
 file_menu = Menu(menu_bar, tearoff=False)
 edit_menu = Menu(menu_bar, tearoff=False)
 
-menu_bar.add_cascade(label='File', menu=file_menu)
-menu_bar.add_cascade(label='Edit', menu=edit_menu)
 menu_bar.add_command(label='Take a Quiz', command=start_quiz)
 menu_bar.add_command(label='Search for a question', command=pack_search_question)
-file_menu.add_command(label='Exit', command=win.quit)
-edit_menu.add_command(label='Add Question', command=add_question)
-edit_menu.add_command(label='Delete Question', command=delete_question)
+menu_bar.add_command(label='Add a question', command=pack_add_frame)
 
 list_label = Label(win, text='Double click to edit a question')
 list_label.pack()
@@ -389,91 +407,108 @@ question_list = retrieve_questions()
 for question in question_list:
     list_box.insert(END, question)
 
-add_frame = Frame(win, width=300, height=150, borderwidth=5, bg='PeachPuff')
-add_frame.pack()
-add_frame.pack_propagate(0)
-# The add_frame is packed here so it appears when the user clicks to access the add_form
+add_frame = Frame(win, width=300, height=150, borderwidth=5, bg=edit_question_color, relief='raised')
 
-text_lbl = Label(add_frame, text='Question text:')
-text_lbl.grid(row=0, column=0)
+text_lbl = Label(add_frame, text='Question text:', bg=edit_question_color)
+text_lbl.grid(row=0, column=0, sticky='w')
+
 text_entry = Entry(add_frame, textvariable=question_text, width=50)
-text_entry.grid(row=0, column=1)
+text_entry.grid(row=0, column=1, sticky='e')
 
-point_lbl = Label(add_frame, text='Point value: ')
-point_lbl.grid(row=1, column=0, sticky='e')
+point_lbl = Label(add_frame, text='Point value: ', bg=edit_question_color)
+point_lbl.grid(row=1, column=0, sticky='w')
+
 point_entry = Entry(add_frame, textvariable=point_value, width=10)
-point_entry.grid(row=1, column=1, sticky='w')
+point_entry.grid(row=1, column=1, sticky='e')
 
-cor_fb_lbl = Label(add_frame, text='Correct feedback: ', width=40)
-cor_fb_lbl.grid(row=2, column=0)
+cor_fb_lbl = Label(add_frame, text='Correct feedback: ', bg=edit_question_color)
+cor_fb_lbl.grid(row=2, column=0, sticky='w')
+
 cor_fb_entry = Entry(add_frame, textvariable=correct_feedback, width=40)
-cor_fb_entry.grid(row=2, column=1)
+cor_fb_entry.grid(row=2, column=1, sticky='e')
 
-incor_fb_lbl = Label(add_frame, text='Incorrect feedback:', width=40)
-incor_fb_lbl.grid(row=3, column=0)
+incor_fb_lbl = Label(add_frame, text='Incorrect feedback:', bg=edit_question_color)
+incor_fb_lbl.grid(row=3, column=0, sticky='w')
+
 incor_fb_entry = Entry(add_frame, textvariable=incorrect_feedback, width=40)
-incor_fb_entry.grid(row=3, column=1)
+incor_fb_entry.grid(row=3, column=1, sticky='e')
 
-cor_choice_lbl = Label(add_frame, text='Correct answer:')
-cor_choice_lbl.grid(row=4, column=0)
+cor_choice_lbl = Label(add_frame, text='Correct answer:', bg=edit_question_color)
+cor_choice_lbl.grid(row=4, column=0, sticky='w')
+
 cor_choice_entry = Entry(add_frame, textvariable=correct_choice, width=40)
-cor_choice_entry.grid(row=4, column=1)
+cor_choice_entry.grid(row=4, column=1, sticky='e')
 
-choice_1_label = Label(add_frame, text='Incorrect answer:')
-choice_1_label.grid(row=5, column=0)
+choice_1_lbl = Label(add_frame, text='Incorrect answer:', bg=edit_question_color)
+choice_1_lbl.grid(row=5, column=0, sticky='w')
+
 choice_1_entry = Entry(add_frame, textvariable=choice1, width=40)
-choice_1_entry.grid(row=5, column=1)
+choice_1_entry.grid(row=5, column=1, sticky='e')
 
-choice_2_label = Label(add_frame, text='Incorrect answer:')
-choice_2_label.grid(row=6, column=0)
+choice_2_lbl = Label(add_frame, text='Incorrect answer:', bg=edit_question_color)
+choice_2_lbl.grid(row=6, column=0, sticky='w')
+
 choice_2_entry = Entry(add_frame, textvariable=choice2, width=40)
-choice_2_entry.grid(row=6, column=1)
+choice_2_entry.grid(row=6, column=1, sticky='e')
 
-choice_3_label = Label(add_frame, text='Incorrect answer:')
-choice_3_label.grid(row=7, column=0)
+choice_3_lbl = Label(add_frame, text='Incorrect answer:', bg=edit_question_color)
+choice_3_lbl.grid(row=7, column=0, sticky='w')
+
 choice_3_entry = Entry(add_frame, textvariable=choice3, width=40)
-choice_3_entry.grid(row=7, column=1)
+choice_3_entry.grid(row=7, column=1, sticky='e')
 
-submit_btn = Button(add_frame, text='Submit', command=add_question, width=40)
+submit_btn = Button(add_frame, text='Submit', command=add_question, width=30)
 submit_btn.grid(row=8, column=0)
+
+return_btn = Button(add_frame, text='Return', command=forget_add_frame, width=30)
+return_btn.grid(row=9, column=0)
 
 delete_btn = Button(add_frame, text='Delete', command=delete_question, width=40)
 
-quiz_frame = Frame(win, width=600, height=600, bg='purple')
+quiz_frame = Frame(win, width=600, height=600, bg='Azure', relief='raised', borderwidth=3)
 
-quiz_question_label = Label(quiz_frame, textvariable=question_text, padx=20)
-quiz_question_label.grid(row=0, column=0)
+quiz_question_label = Label(quiz_frame, textvariable=question_text, bg='Azure', justify='left')
+quiz_question_label.grid(row=0, column=0, sticky='w')
 
-quiz_point_label = Label(quiz_frame, textvariable=point_total, padx=20)
-quiz_point_label.grid(row=0, column=1, sticky='e')
+quiz_point_label = Label(quiz_frame, textvariable=point_total, bg='Azure', justify='right')
+quiz_point_label.grid(row=0, column=1, sticky='w')
 
-question_number_label = Label(quiz_frame, textvariable=question_total)
-question_number_label.grid(row=1, column=1)
+out_of_lbl = Label(quiz_frame, text='Points out of', bg='azure')
+out_of_lbl.grid(row=0, column=2)
 
-quiz_choice_1 = Radiobutton(quiz_frame, textvariable=choice0, variable=question_selection, value=0)
-quiz_choice_1.grid(row=1, column=0)
+out_of_point_lbl = Label(quiz_frame, textvariable=out_of_points, justify='left', bg='azure')
+out_of_point_lbl.grid(row=0, column=3, sticky='w')
 
-quiz_choice_2 = Radiobutton(quiz_frame, textvariable=choice1, variable=question_selection, value=1)
-quiz_choice_2.grid(row=2, column=0)
+question_number_label = Label(quiz_frame, textvariable=question_total, bg='Azure', justify='right')
+question_number_label.grid(row=1, column=1, sticky='w')
 
-quiz_choice_3 = Radiobutton(quiz_frame, textvariable=choice2, variable=question_selection, value=2)
-quiz_choice_3.grid(row=3, column=0)
+out_of_question_lbl = Label(quiz_frame, textvariable=out_of_questions, bg='azure', justify='left')
+out_of_question_lbl.grid(row=1, column=2, sticky='w')
 
-quiz_choice_4 = Radiobutton(quiz_frame, textvariable=choice3, variable=question_selection, value=3)
-quiz_choice_4.grid(row=4, column=0)
+quiz_choice_1 = Radiobutton(quiz_frame, textvariable=choice0, variable=question_selection, value=0, bg='Azure')
+quiz_choice_1.grid(row=1, column=0, sticky='w')
+
+quiz_choice_2 = Radiobutton(quiz_frame, textvariable=choice1, variable=question_selection, value=1, bg='Azure')
+quiz_choice_2.grid(row=2, column=0, sticky='w')
+
+quiz_choice_3 = Radiobutton(quiz_frame, textvariable=choice2, variable=question_selection, value=2, bg='Azure')
+quiz_choice_3.grid(row=3, column=0, sticky='w')
+
+quiz_choice_4 = Radiobutton(quiz_frame, textvariable=choice3, variable=question_selection, value=3, bg='Azure')
+quiz_choice_4.grid(row=4, column=0, sticky='w')
 
 submit_question_btn = Button(quiz_frame, command=evaluate_question, text='Submit Question')
 
-feedback_label = Label(quiz_frame, textvariable=feedback)
+feedback_label = Label(quiz_frame, textvariable=feedback, bg='Azure')
 
 next_question_button = Button(quiz_frame, command=next_question, text='Next question')
 
 exit_quiz_btn = Button(quiz_frame, command=exit_quiz, text='Exit quiz')
 
-search_question_frame = Frame(win, background='PeachPuff', width=400, height=400, borderwidth=5, relief='raised')
+search_question_frame = Frame(win, background='PeachPuff', width=300, height=400, borderwidth=5, relief='raised')
 
-search_question_btn = Button(search_question_frame, text='Search questions', command=search_question)
-search_question_btn.grid(row=0, column=0)
+search_question_btn = Button(search_question_frame, text='Search questions', command=search_question, width=23)
+search_question_btn.grid(row=0, column=0, sticky='w')
 
 search_question_entry = Entry(search_question_frame, textvariable=search_text, width='60')
 search_question_entry.grid(row=0, column=1)
@@ -481,7 +516,7 @@ search_question_entry.grid(row=0, column=1)
 exit_search_btn = Button(search_question_frame, command=exit_quiz, text='Back to question management')
 exit_search_btn.grid(row=1, column=0)
 
-close_matches_list_box = Listbox(search_question_frame, width=60, height=30)
+close_matches_list_box = Listbox(search_question_frame, width=40, height=20)
 close_matches_list_box.grid(row=2, column=0, columnspan=2)
 
 win.mainloop()
